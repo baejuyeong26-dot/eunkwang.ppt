@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORD BLITZ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;background:#0d0d14;color:#fff;padding:18px;min-height:100vh;}
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* LOBBY */
+#s-lobby{text-align:center;padding-top:28px;}
+.logo{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:56px;letter-spacing:4px;background:linear-gradient(135deg,#ff006e,#ff9500,#ffee00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-size:11px;letter-spacing:6px;color:#444;margin-bottom:24px;}
+.nick-wrap{max-width:360px;margin:0 auto 20px;}
+.nick-label{font-size:11px;letter-spacing:3px;color:#555;margin-bottom:8px;text-align:left;}
+.nick-input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px 16px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:600;font-size:16px;font-weight:600;outline:none;}
+.nick-input:focus{border-color:rgba(255,0,110,0.6);}
+.nick-input::placeholder{color:#333;}
+.gen-msg{font-size:12px;color:#ff9500;letter-spacing:2px;min-height:18px;margin-bottom:10px;}
+.start-btn{padding:14px 64px;background:linear-gradient(135deg,#ff006e,#ff4500);border:none;border-radius:12px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:26px;letter-spacing:3px;cursor:pointer;margin-bottom:10px;display:inline-block;}
+.start-btn:hover{opacity:.85;}
+.lobby-desc{font-size:12px;color:#444;letter-spacing:1px;margin-bottom:24px;}
+.rank-wrap{max-width:480px;margin:0 auto;}
+.section-title{font-size:11px;letter-spacing:3px;color:#444;margin-bottom:8px;text-align:left;}
+.rank-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;margin-bottom:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+.rank-row.me{border-color:rgba(255,0,110,0.4);background:rgba(255,0,110,0.07);}
+.rank-num{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:18px;width:28px;text-align:center;flex-shrink:0;}
+.rank-num.gold{color:#ffee00;}.rank-num.silver{color:#aaa;}.rank-num.bronze{color:#cc7744;}.rank-num.other{color:#333;}
+.rank-name{flex:1;font-size:14px;font-weight:700;}
+.rank-score{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:20px;}
+.rank-empty{font-size:12px;color:#333;letter-spacing:2px;padding:16px;text-align:center;}
+.clear-btn{font-size:10px;color:#333;background:none;border:none;cursor:pointer;float:right;}
+.clear-btn:hover{color:#ff006e;}
+
+/* GAME */
+#s-game{max-width:600px;margin:0 auto;padding-top:8px;}
+.progress-bar-wrap{display:flex;gap:5px;margin-bottom:12px;}
+.prog-dot{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);}
+.prog-dot.done{background:#ff006e;}
+.prog-dot.current{background:#ff9500;}
+.timer-wrap{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;margin-bottom:12px;overflow:hidden;}
+.timer-bar{height:100%;border-radius:3px;}
+.hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.hud-left{display:flex;flex-direction:column;}
+.hud-timer{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:38px;line-height:1;}
+.hud-qnum{font-size:11px;color:#555;letter-spacing:2px;margin-top:2px;}
+.hud-fin{background:none;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:7px 16px;color:#555;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:600;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;}
+.hud-fin:hover{color:#fff;}
+.hud-fin.active{background:rgba(255,0,110,0.2);border-color:#ff006e;color:#ff006e;animation:glow .8s ease-in-out infinite alternate;}
+@keyframes glow{to{box-shadow:0 0 12px rgba(255,0,110,0.4);}}
+.prompt-box{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:16px 20px;margin-bottom:12px;transition:all .4s;overflow:hidden;}
+.prompt-box.hidden{max-height:0!important;padding:0;margin-bottom:0;opacity:0;pointer-events:none;}
+.prompt-lbl{font-size:9px;color:#ff006e;letter-spacing:4px;margin-bottom:6px;}
+.prompt-q{font-size:16px;font-weight:700;line-height:1.5;}
+.sentence-area{background:#000;border:1px solid rgba(0,255,136,0.2);border-radius:10px;padding:12px 16px;min-height:44px;margin-bottom:16px;font-size:17px;font-weight:700;color:#00ff88;line-height:1.5;}
+.masked-pick{color:#2a2a2a;letter-spacing:3px;}
+.caret{display:inline-block;width:3px;height:16px;background:#00ff88;vertical-align:middle;margin-left:2px;animation:caret .7s step-end infinite;}
+@keyframes caret{50%{opacity:0;}}
+.cards-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;padding:12px 10px;transition:all .15s;}
+.card:hover{background:rgba(0,255,136,0.09);border-color:rgba(0,255,136,0.5);transform:translateY(-3px);}
+.card:active{transform:translateY(0);}
+.card.correct-flash{background:rgba(0,255,136,0.25);border-color:#00ff88;}
+.card.wrong-flash{background:rgba(255,0,110,0.2);border-color:#ff006e;}
+.card-lbl{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:12px;letter-spacing:3px;color:#333;position:absolute;top:8px;left:10px;}
+.card-word{font-size:15px;font-weight:700;color:#fff;text-align:center;line-height:1.4;}
+.score-popup{position:absolute;top:-4px;right:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:22px;color:#00ff88;pointer-events:none;animation:popup .7s ease-out forwards;text-shadow:0 0 8px rgba(0,255,136,0.6);}
+@keyframes popup{0%{opacity:0;transform:translateY(6px);}20%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-24px);}}
+
+/* ROUND RESULT */
+#s-round{text-align:center;padding-top:16px;max-width:500px;margin:0 auto;}
+.round-num{font-size:11px;letter-spacing:4px;color:#555;margin-bottom:4px;}
+.r-verdict{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:40px;letter-spacing:4px;margin-bottom:2px;}
+.r-score{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:76px;line-height:1;margin-bottom:4px;}
+.r-comment{font-size:13px;color:#666;letter-spacing:1px;margin-bottom:12px;}
+.cmp-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px 14px;text-align:left;margin-bottom:8px;}
+.cmp-lbl{font-size:9px;letter-spacing:3px;margin-bottom:5px;}
+.cmp-lbl.mine{color:#00ff88;}.cmp-lbl.ai{color:#4d9fff;}
+.cmp-txt{font-size:14px;font-weight:600;color:#ccc;line-height:1.6;}
+.r-q{font-size:10px;color:#333;margin-bottom:12px;}
+.r-q span{color:#555;}
+.next-btn{width:100%;padding:14px;background:linear-gradient(135deg,#ff006e,#ff4500);border:none;border-radius:10px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:22px;letter-spacing:2px;cursor:pointer;}
+.next-btn:hover{opacity:.88;}
+
+/* FINAL */
+#s-final{text-align:center;padding-top:20px;max-width:500px;margin:0 auto;}
+.final-title{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:36px;letter-spacing:4px;color:#ffee00;margin-bottom:4px;}
+.final-score{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:72px;line-height:1;margin-bottom:2px;}
+.final-avg{font-size:13px;color:#666;letter-spacing:2px;margin-bottom:16px;}
+.score-list{max-width:480px;margin:0 auto 16px;text-align:left;}
+.score-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+.score-item-q{flex:1;font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.score-item-s{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:18px;flex-shrink:0;}
+.btn-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;margin:0 auto;}
+.btn-again{padding:13px;background:linear-gradient(135deg,#ff006e,#ff4500);border:none;border-radius:10px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;cursor:pointer;}
+.btn-menu{padding:13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;cursor:pointer;}
+.btn-menu:hover{color:#fff;}
+</style>
+</head>
+<body>
+
+<div id="s-lobby" class="screen active">
+  <div class="logo">WORD BLITZ</div>
+  <div class="logo-sub">SENTENCE BUILDER</div>
+  <div class="nick-wrap">
+    <div class="nick-label">NICKNAME</div>
+    <input class="nick-input" id="nick-input" type="text" maxlength="12" placeholder="닉네임 입력">
+  </div>
+  <div class="gen-msg" id="gen-msg"></div>
+  <button class="start-btn" onclick="tryStart()">START</button>
+  <div class="lobby-desc">5문제 랜덤 출제 · 문제당 10초 · 정답+스피드 보너스로 점수 차등</div>
+  <div class="rank-wrap">
+    <button class="clear-btn" onclick="clearRank()">초기화</button>
+    <div class="section-title">🏆 LEADERBOARD</div>
+    <div id="lobby-rank-list"><div class="rank-empty">아직 기록 없음</div></div>
+  </div>
+</div>
+
+<div id="s-game" class="screen">
+  <div class="progress-bar-wrap" id="progress-bar"></div>
+  <div class="timer-wrap"><div id="timer-bar" class="timer-bar" style="width:100%;background:#00ff88;"></div></div>
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-timer" id="hud-timer" style="color:#00ff88;">10</div>
+      <div class="hud-qnum" id="hud-qnum">Q1 / 5</div>
+    </div>
+    <div id="hud-step" style="font-size:11px;color:#444;letter-spacing:2px;"></div>
+    <button class="hud-fin" id="fin-btn" onclick="finishNow()">완성 →</button>
+  </div>
+  <div class="prompt-box" id="prompt-box">
+    <div class="prompt-lbl">QUESTION</div>
+    <div class="prompt-q" id="q-txt"></div>
+  </div>
+  <div class="sentence-area" id="sentence-area"><span class="caret"></span></div>
+  <div class="cards-row" id="cards-row"></div>
+</div>
+
+<div id="s-round" class="screen">
+  <div class="round-num" id="round-num">ROUND 1 / 5</div>
+  <div class="r-verdict" id="r-verdict">GOOD!</div>
+  <div class="r-score" id="r-score">--</div>
+  <div class="r-comment" id="r-comment"></div>
+  <div class="r-q" id="r-q"></div>
+  <div class="cmp-box"><div class="cmp-lbl mine">▶ MY ANSWER</div><div class="cmp-txt" id="r-mine"></div></div>
+  <div class="cmp-box"><div class="cmp-lbl ai">◆ CORRECT ANSWER</div><div class="cmp-txt" id="r-ai"></div></div>
+  <div style="margin-top:16px;">
+    <button class="next-btn" id="next-btn" onclick="nextRound()">다음 문제 →</button>
+  </div>
+</div>
+
+<div id="s-final" class="screen">
+  <div class="final-title">🏁 FINAL SCORE</div>
+  <div class="final-score" id="final-score">--</div>
+  <div class="final-avg" id="final-avg">평균 -- 점</div>
+  <div class="score-list" id="score-list"></div>
+  <div class="rank-wrap" style="margin-bottom:20px;">
+    <div class="section-title">🏆 LEADERBOARD</div>
+    <div id="final-rank-list"><div class="rank-empty">로딩 중...</div></div>
+  </div>
+  <div class="btn-row2">
+    <button class="btn-again" onclick="tryStart()">PLAY AGAIN</button>
+    <button class="btn-menu" onclick="goLobby()">MENU</button>
+  </div>
+</div>
+
+<script>
+var TOTAL_TIME = 10;
+var TOTAL_ROUNDS = 5;
+// 중요도 순위별 가중치 (1위=핵심 개념, 2위=핵심 동작/상태변화, 3위=보충설명)
+var RANK_WEIGHTS = {1:0.40, 2:0.35, 3:0.25};
+var STEP_BASE_RATIO = 0.6; // 각 단계 배점 중 "정답이면 무조건 받는" 기본 비율 (나머지는 속도 보너스)
+
+// ── 문제 데이터베이스 (제공된 txt 원본 반영) ──
+var QB = [
+  {
+    q:'물체의 운동 상태나 모양을 변화시키는 원인은 무엇인가?',
+    intro:'물체의 운동 상태는',
+    ans:['힘이 작용하여','방향과 속도가','변하게 된다.'],
+    w1:['질량이 증가하여','가속도가 감소하고','정지하게 된다.'],
+    w2:['속도가 일정하여','에너지가 소멸하고','변하지 않는다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'조선 시대 국왕의 직속 사법 기관으로 중죄인을 다루던 곳은?',
+    intro:'국왕 직속 사법 기관인',
+    ans:['의금부에서 전담하여','중죄인을 심문하고','처벌을 내렸다.'],
+    w1:['승정원에서 담당하여','왕명 전달만','수행하게 했다.'],
+    w2:['사헌부에서 조사하여','관리의 비리를','감찰만 하였다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'화자의 정서나 분위기를 간접적으로 환기하는 사물을 무엇이라 하는가?',
+    intro:'화자의 감정을 대변하는',
+    ans:['객관적 상관물이라','부르는 사물로','정서를 표현한다.'],
+    w1:['서정적 자아라','불리는 인물로','작품을 이끈다.'],
+    w2:['음성 상징어라','표현하는 단어로','소리를 흉내 낸다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'세포 호흡을 통해 생명 활동에 필요한 ATP를 생성하는 세포 소기관은?',
+    intro:'세포 내 에너지 공장인',
+    ans:['미토콘드리아에서 주로','ATP를 합성하여','에너지를 공급한다.'],
+    w1:['엽록체에서 직접','포도당을 분해하여','빛을 흡수한다.'],
+    w2:['리보솜에서 주로','단백질을 합성하여','에너지를 만든다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'시장에서 수요량과 공급량이 일치하여 가격이 변하지 않는 상태는?',
+    intro:'수요와 공급이 만나는',
+    ans:['시장 균형이','이뤄지는 지점에서','가격이 결정된다.'],
+    w1:['가격 통제가','시행되는 지점에서','품귀가 일어난다.'],
+    w2:['독점 상태가','유지되는 지점에서','초과 이윤이 난다.'],
+    rank:[1,3,2]
+  },
+  {
+    q:'물질이 상태 변화를 일으킬 때 흡수하거나 방출하는 열은?',
+    intro:'물질의 상태가 변할 때',
+    ans:['상태 변화 열인','잠열을 흡수하여','온도가 유지된다.'],
+    w1:['비열에 의한','온도가 상승하여','급격히 팽창한다.'],
+    w2:['열용량에 의해','질량이 변하므로','열이 발생한다.'],
+    rank:[2,1,3]
+  },
+  {
+    q:'18세기 영국에서 시작되어 산업 구조와 사회를 급변시킨 사건은?',
+    intro:'18세기 영국에서 시작된',
+    ans:['산업 혁명이 일어나','기계화 생산이','대량화되었다.'],
+    w1:['시민 혁명이 발발하여','신분제가 폐지되고','공화정이 섰다.'],
+    w2:['봉건제가 해체되어','자영농이 증가하고','농업이 발전했다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'하나의 사건이 일어날 가능성을 0과 1 사이의 수로 나타낸 것은?',
+    intro:'사건이 발생할 가능성은',
+    ans:['수학적 확률이라','정의되는 수치로','비율을 나타낸다.'],
+    w1:['통계적 상관관계라','분석하는 방식으로','원인을 찾는다.'],
+    w2:['표준편차라','계산하는 값으로','산포도를 나타낸다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'산과 염기가 반응하여 물과 염을 생성하는 화학 반응은?',
+    intro:'산과 염기가 만나면',
+    ans:['중화 반응이','진행되어 물과','염이 생성된다.'],
+    w1:['산화 환원 반응이','진행되어 전자가','이동하게 된다.'],
+    w2:['치환 반응이','진행되어 기체가','즉시 발생한다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'화산 활동으로 형성된 칼데라호가 대표적인 우리나라의 산은?',
+    intro:'화산 함몰로 형성된',
+    ans:['백두산 천지이며','웅장한 칼데라호의','경관을 자랑한다.'],
+    w1:['한라산 백록담이며','화구호의 형태로','정상에 위치한다.'],
+    w2:['지리산 천왕봉이며','높은 산악 지형의','모태가 된다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'삼국 시대 신라에서 인재를 양성하기 위해 조직한 청소년 집단은?',
+    intro:'신라의 청소년 조직인',
+    ans:['화랑도 체제로서','원광의 세속오계를','덕목으로 삼았다.'],
+    w1:['삼별초 조직으로서','무신 정권의','군사적 기반이었다.'],
+    w2:['화백 회의로서','귀족들의 합의를','도출해 내었다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'시에서 동일한 소리나 단어가 반복되어 형성되는 운율감은?',
+    intro:'시에서 소리의 반복은',
+    ans:['운율이라 부르며','리듬감을 형성하여','주제를 강조한다.'],
+    w1:['상징이라 부르며','추상적 의미를','구체화해 준다.'],
+    w2:['반어라 부르며','실제 의미와','반대로 표현한다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'신경계에서 자극을 전달하는 기본 단위가 되는 세포는?',
+    intro:'신경계를 구성하는',
+    ans:['뉴런 구조를','통해 자극을','신속히 전달한다.'],
+    w1:['시냅스 결합을','통해 혈액을','직접 순환시킨다.'],
+    w2:['혈소판 구조를','통해 지혈 작용을','빠르게 수행한다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'한 나라의 영역 내에서 생산된 최종 생산물의 시장 가치 합은?',
+    intro:'일정 기간 국내 생산은',
+    ans:['국내총생산(GDP)으로','집계되어 경제','규모를 나타낸다.'],
+    w1:['국민총소득(GNI)으로','계산되어 국민','생활 수준만 본다.'],
+    w2:['가계부채(DSR)로','산출되어 금융','위험도를 나타낸다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'빛이 서로 다른 매질을 통과할 때 진행 방향이 꺾이는 현상은?',
+    intro:'매질의 속도 차이로',
+    ans:['빛의 굴절 현상으로','진행 경로가','꺾이게 된다.'],
+    w1:['빛의 회절 현상으로','장애물 뒤쪽까지','돌아 들어가게 된다.'],
+    w2:['빛의 반사 현상으로','경계면에서 모두','튕겨 나가게 된다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'1919년 일제 강점기 국권 회복을 위해 일어난 전국적 만세 운동은?',
+    intro:'1919년 전국적으로',
+    ans:['3·1 운동이 발발하여','대한 임시정부','수립의 계기가 되었다.'],
+    w1:['6·10 만세 운동이','전개되어 순종','인산일에 맞춰 일어났다.'],
+    w2:['광주 학생 항일 운동이','시작되어 학생','중심의 투쟁이 되었다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'지각을 구성하는 판과 판이 서로 충돌하거나 갈라지는 경계는?',
+    intro:'지각이 이동하면서',
+    ans:['판의 경계 부근에서','지진과 화산이','자주 발생한다.'],
+    w1:['변구 경계 및','내륙 중앙에서','평야가 형성된다.'],
+    w2:['수평 단층선에서','기후 변화가','급격히 일어난다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'서유럽 중세 사회를 유지하던 경제적 기본 단위인 제도는?',
+    intro:'서유럽 중세 경제는',
+    ans:['장원제 시스템으로','영주와 농노의','관계를 바탕으로 했다.'],
+    w1:['봉건제 관료 체제로','중앙 집권적','행정을 수행하였다.'],
+    w2:['절대 왕정 체제로','관료제와 상비군을','적극 활용하였다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'지구 표면을 둘러싸고 있는 기체층으로 기상 현상이 일어나는 곳은?',
+    intro:'수증기가 존재하는',
+    ans:['대기권 중 대류권에서','눈과 비 같은','기상 현상이 생긴다.'],
+    w1:['성층권 오존층에서','자외선을 차단하며','기상 현상이 발생한다.'],
+    w2:['열권 영역에서','오로라가 나타나며','비가 내리게 된다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'수집된 데이터의 평균값으로부터 떨어진 정도를 나타내는 수치는?',
+    intro:'변량의 산포도를',
+    ans:['표준편차 지표를','통해 계산하여','치우침을 확인한다.'],
+    w1:['중앙값 수치를','사용하여 가장','가운데 값을 구한다.'],
+    w2:['최빈값 지표를','뽑아내어 가장','빈도 높은 값을 찾는다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'지구 표면의 암석이 물, 공기, 생물 등의 작용으로 잘게 부서지거나 성분이 변하는 현상은?',
+    intro:'지표의 암석이',
+    ans:['풍화 작용을 받아','토양으로 변하고','잘게 부서진다.'],
+    w1:['침식 작용을 받아','해안선이 형성되고','깎여 나가게 된다.'],
+    w2:['퇴적 작용을 받아','지층이 생성되고','단단하게 굳어진다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'조선 세종 때 집현전 학자들과 함께 창제하여 반포한 우리나라 고유의 문자 체계는?',
+    intro:'세종대왕이 창제한',
+    ans:['훈민정음으로서','백성을 가르치는','바른 소리를 뜻한다.'],
+    w1:['이두 문식으로서','한자의 음과 뜻을','차용하여 사용했다.'],
+    w2:['향찰 기법으로서','신라 시가의','표기법을 발전시켰다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'말하고자 하는 바와 반대되는 뜻으로 표현하여 메시지를 강조하는 표현 기법은?',
+    intro:'실제 의도와 다른',
+    ans:['반어법을 사용하여','상황을 역설적으로','강조해 표현한다.'],
+    w1:['역설법을 사용하여','모순된 사실을','진리로 제시한다.'],
+    w2:['풍자법을 사용하여','대상을 비꼬고','희화화하게 된다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'식물이 빛 에너지를 이용하여 포도당과 산소를 합성하는 작용은?',
+    intro:'엽록체에서 일어나는',
+    ans:['광합성 작용으로','유기물을 생산하고','산소를 방출한다.'],
+    w1:['증산 작용으로','수분을 배출하고','체온을 조절한다.'],
+    w2:['발효 작용으로','유기물을 분해하고','알코올을 만든다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'물가가 지속적으로 상승하여 화폐 가치가 떨어지는 현상은?',
+    intro:'통화량 증가 등으로',
+    ans:['인플레이션이 발생하여','구매력이 하락하고','물가가 오른다.'],
+    w1:['디플레이션이 발생하여','경기 침체가 오고','물가가 떨어진다.'],
+    w2:['스테그네이션이 발생하여','성장이 정체되고','고용이 늘어난다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'14세기에서 16세기 유럽에서 일어난 고대 그리스·로마 문화의 부흥 운동은?',
+    intro:'인문주의를 바탕으로',
+    ans:['르네상스가 전개되어','문예 부흥과','인간 중심 문화가 피어났다.'],
+    w1:['종교 개혁이 전개되어','신교가 등장하고','교황권이 약화되었다.'],
+    w2:['계몽주의가 전개되어','이성을 중시하고','절대 왕정을 비판했다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'자연수 중에서 1보다 큰 수 가운데 1과 자기 자신만을 약수로 가지는 수는?',
+    intro:'약수가 두 개뿐인',
+    ans:['소수라 불리며','수의 합성에','기본이 되는 수이다.'],
+    w1:['합성수라 불리며','여러 약수를','가지고 있는 수이다.'],
+    w2:['완전수라 불리며','자기 자신을 제외한','약수의 합과 같다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'원소들을 원자 번호 순서대로 나열하여 화학적 성질이 비슷한 원소가 같은 열에 오도록 배치한 표는?',
+    intro:'원소의 주기성을 나타낸',
+    ans:['주기율표라 부르며','족과 주기 형태로','정리되어 있다.'],
+    w1:['분자식이라 부르며','결합 비율을','기호로 표시한다.'],
+    w2:['이온화 에너지표라','측정된 수치로','나열되어 있다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'적도 부근에서 발생하는 강한 열대성 저기압으로, 우리나라 여름/가을철에 영향을 주는 기상 현상은?',
+    intro:'북서태평양에서 발생한',
+    ans:['태풍에 해당하며','강풍과 폭우를','동반하게 된다.'],
+    w1:['토네이도에 해당하며','육상에서 형성되는','용오름 현상이다.'],
+    w2:['사이클론에 해당하며','인도양 지역에만','국한되어 나타난다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'삼국 시대 고구려의 영토를 크게 넓히고 만주와 한반도 북부를 호령했던 왕은?',
+    intro:'영토를 대대적으로 확장한',
+    ans:['광개토대왕이며','영락이라는 연호를','사용하였다.'],
+    w1:['장수왕이며','평양으로 수도를','이전하게 하였다.'],
+    w2:['태조왕이며','중앙집권 체제를','완성하게 되었다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'시문학이나 소설에서 사물에 인격을 부여하여 사람처럼 표현하는 수사법은?',
+    intro:'무생물이나 동물을',
+    ans:['의인법으로 표현하여','친근감과 생동감을','불러일으킨다.'],
+    w1:['직유법으로 표현하여',"'~처럼' 기호를",'직접 사용하게 된다.'],
+    w2:['은유법으로 표현하여',"'A는 B다' 형태로",'암시하여 보여준다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'유전 정보를 담고 있는 물질로, 세포의 핵 속에 위치하며 이중 헬릭스(쌍가닥) 구조를 가진 것은?',
+    intro:'생명체의 설계도인',
+    ans:['DNA 분자이며','염기 배열을 통해','유전 정보를 저장한다.'],
+    w1:['RNA 분자이며','단일 가닥으로','단백질 합성에 관여한다.'],
+    w2:['효소 단백질이며','생체 촉매로서','대사 작용을 촉진한다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'국가의 주권이 국민에게 있고, 모든 권력은 국민으로부터 나온다는 민주주의 원리는?',
+    intro:'민주 국가의 근본인',
+    ans:['국민주권의 원리로','헌법 제1조에','명시되어 있다.'],
+    w1:['권력분립의 원리로','삼권분립을 통해','견제와 균형을 이룬다.'],
+    w2:['법치주의의 원리로','법에 의한 통치를','우선시하게 된다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'달이 태양과 지구 사이에 위치하여 달의 그림자가 태양의 일부나 전체를 가리는 현상은?',
+    intro:'천체 관측 현상인',
+    ans:['일식 현상이라 하며','태양 빛이 차단되어','어두워진다.'],
+    w1:['월식 현상이라 하며','지구 그림자에','달이 가려진다.'],
+    w2:['윤초 현상이라 하며','지구 자전 속도','차이로 발생한다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'1789년 프랑스에서 봉건적 특권 폐지와 인권 선언을 발표하며 대혁명이 시작된 계기가 된 사건은?',
+    intro:'시민들이 봉기하여',
+    ans:['바스티유 감옥을 습격하고','자유와 평등을','부르짖었다.'],
+    w1:['보스턴 차 사건을 일으키고','독립 전쟁을','촉발시켰다.'],
+    w2:['피의 일요일 사건을 겪고','전제 정치를','타도하려 했다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'직각삼각형에서 빗변의 길의 제곱은 나머지 두 변의 길의 제곱의 합과 같다는 정리의 이름은?',
+    intro:'기하학의 기본인',
+    ans:['피타고라스 정리로서','직각삼각형 변의','관계를 설명한다.'],
+    w1:['유클리드 호제법으로서','최대공약수를','구하는 방법이다.'],
+    w2:['페르마의 정리로서','정수론의 핵심적인','명제를 제공한다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'수용액 상태에서 수소 이온(H+)을 내놓으며, 리트머스 종이를 붉게 변하게 하는 물질은?',
+    intro:'산성 특성을 가지는',
+    ans:['산성 물질이라 부르며','신맛을 내는','성질이 있다.'],
+    w1:['염기성 물질이라 부르며','쓴맛을 내고','단백질을 녹인다.'],
+    w2:['중성 물질이라 부르며','지시약의 색을','변하게 하지 않는다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'빙하의 침식 작용으로 형성된 U자곡에 바닷물이 들어차면서 생긴 좁고 깊은 만은?',
+    intro:'빙하 지형인',
+    ans:['피오르 해안이라 하며','노르웨이 등에서','절경을 이룬다.'],
+    w1:['리아스 해안이라 하며','하천 침식 곡이','침강하여 생겼다.'],
+    w2:['석호 해안이라 하며','사주에 의해','바다가 막혀 생겼다.'],
+    rank:[1,2,3]
+  },
+  {
+    q:'음악에서 박자와 상관없이 독주자나 독창자가 자유롭게 연주하도록 허용된 화려한 기교의 삽입구는?',
+    intro:'협주곡의 명장면인',
+    ans:['카덴차라고 부르며','연주자의 기량을','극대화하여 보여준다.'],
+    w1:['크레센도라고 부르며','소리를 점차','크게 연주하게 된다.'],
+    w2:['페르마타라고 부르며','음표를 늘려서','충분히 유지한다.'],
+    rank:[1,2,3]
+  }
+];
+
+// ── 랭킹 ──
+function getRankings(){ try{return JSON.parse(localStorage.getItem('wb_rank_v3')||'[]');}catch(e){return[];} }
+function saveScore(name,score){
+  var list=getRankings();
+  list.push({name:name,score:score,ts:Date.now()});
+  list.sort(function(a,b){return b.score-a.score||b.ts-a.ts;});
+  list=list.slice(0,30);
+  try{localStorage.setItem('wb_rank_v3',JSON.stringify(list));}catch(e){}
+  return list;
+}
+function clearRank(){if(confirm('랭킹 초기화?')){localStorage.removeItem('wb_rank_v3');renderRankList([],'lobby-rank-list','',0);}}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderRankList(list,id,myName,myScore){
+  var el=document.getElementById(id);
+  if(!list||!list.length){el.innerHTML='<div class="rank-empty">아직 기록 없음</div>';return;}
+  var html='';
+  list.slice(0,30).forEach(function(r,i){
+    var isMe=(r.name===myName&&r.score===myScore);
+    var nc=i===0?'gold':i===1?'silver':i===2?'bronze':'other';
+    var med=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+    var sc=r.score>=400?'#00ff88':r.score>=250?'#ff9500':'#ff006e';
+    html+='<div class="rank-row'+(isMe?' me':'')+'"><span class="rank-num '+nc+'">'+med+'</span><span class="rank-name">'+esc(r.name)+'</span><span class="rank-score" style="color:'+sc+'">'+r.score+'점</span></div>';
+  });
+  el.innerHTML=html;
+}
+
+// ── 게임 상태 ──
+var nickname='';
+var currentRound=0;
+var roundScores=[];
+var roundQuestions=[];
+var selectedQuestions=[];
+var currentQ=null;
+var stepIdx=0; // 현재 단계 (0=intro끝, 1=첫번째 어절, ...)
+var pickedAns=[]; // 골랐는지 여부 [true/false/false]
+var tv=TOTAL_TIME, tiv=null, timerPaused=false;
+var playerPicks=[]; // 플레이어가 고른 어절들
+var roundRawScore=0; // 이번 라운드 누적 점수(속도 보너스 포함)
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  if(id==='s-lobby') renderRankList(getRankings(),'lobby-rank-list','',0);
+}
+
+function shuffle(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+
+function tryStart(){
+  var nick=document.getElementById('nick-input').value.trim();
+  if(!nick){document.getElementById('gen-msg').textContent='닉네임을 입력해주세요!';return;}
+  nickname=nick;
+  document.getElementById('gen-msg').textContent='';
+  currentRound=0; roundScores=[]; roundQuestions=[];
+  // 20개 중 5개 완전 랜덤 선택
+  selectedQuestions=shuffle(QB).slice(0,5);
+  startRound();
+}
+
+function startRound(){
+  currentRound++;
+  currentQ=selectedQuestions[currentRound-1];
+  stepIdx=0;
+  playerPicks=[];
+  pickedAns=[false,false,false];
+  roundRawScore=0;
+
+  show('s-game');
+  updateProgress();
+  document.getElementById('hud-qnum').textContent='Q'+currentRound+' / '+TOTAL_ROUNDS;
+  document.getElementById('q-txt').textContent=currentQ.q;
+  document.getElementById('prompt-box').classList.remove('hidden');
+  document.getElementById('fin-btn').classList.remove('active');
+  updateSentence();
+  renderStep();
+  startTimer();
+}
+
+function updateProgress(){
+  var html='';
+  for(var i=1;i<=TOTAL_ROUNDS;i++){
+    var cls=i<currentRound?'done':i===currentRound?'current':'';
+    html+='<div class="prog-dot '+cls+'"></div>';
+  }
+  document.getElementById('progress-bar').innerHTML=html;
+}
+
+function startTimer(){
+  clearInterval(tiv); tiv=null;
+  tv=TOTAL_TIME; timerPaused=false;
+  updateTimerUI();
+  tiv=setInterval(function(){
+    if(timerPaused)return;
+    tv=Math.max(0,Math.round((tv-0.05)*100)/100);
+    updateTimerUI();
+    if(tv<=0){clearInterval(tiv);tiv=null;onTimeout();}
+  },50);
+}
+function resetTimer(){tv=TOTAL_TIME;updateTimerUI();}
+function updateTimerUI(){
+  var pct=tv/TOTAL_TIME;
+  var col=pct>0.5?'#00ff88':pct>0.25?'#ff9500':'#ff006e';
+  document.getElementById('timer-bar').style.width=(pct*100)+'%';
+  document.getElementById('timer-bar').style.background=col;
+  document.getElementById('hud-timer').textContent=Math.ceil(tv);
+  document.getElementById('hud-timer').style.color=col;
+}
+function onTimeout(){
+  // 시간 초과 — 이 단계 오답 처리하고 자동 다음 단계
+  if(stepIdx<3){
+    playerPicks.push('(시간 초과)');
+    stepIdx++;
+    if(stepIdx>=3){gradeRound();}
+    else{updateSentence();renderStep();startTimer();}
+  }
+}
+
+function updateSentence(){
+  var txt=currentQ.intro;
+  for(var i=0;i<playerPicks.length;i++) txt+=' <span class="masked-pick">● ● ●</span>';
+  document.getElementById('sentence-area').innerHTML=txt+' <span class="caret"></span>';
+  document.getElementById('hud-step').textContent='STEP '+(stepIdx+1)+' / 3 · 배점 '+Math.round(RANK_WEIGHTS[currentQ.rank[stepIdx]]*100)+'%';
+  if(stepIdx>=1) document.getElementById('prompt-box').classList.add('hidden');
+  if(stepIdx>=2) document.getElementById('fin-btn').classList.add('active');
+}
+
+// 각 단계별 선택지: ans[stepIdx], w1[stepIdx], w2[stepIdx] 섞기
+function renderStep(){
+  var row=document.getElementById('cards-row');
+  var choices=[
+    {text:currentQ.ans[stepIdx], correct:true},
+    {text:currentQ.w1[stepIdx], correct:false},
+    {text:currentQ.w2[stepIdx], correct:false}
+  ];
+  choices=shuffle(choices);
+  row.innerHTML='';
+  ['A','B','C'].forEach(function(l,i){
+    var c=choices[i];
+    var d=document.createElement('div');
+    d.className='card';
+    d.innerHTML='<span class="card-lbl">'+l+'</span><span class="card-word">'+c.text+'</span>';
+    (function(ch){
+      d.onclick=function(){
+        // 모든 카드 클릭 비활성화
+        row.querySelectorAll('.card').forEach(function(el){el.onclick=null;});
+        // 플래시 효과
+        d.classList.add(ch.correct?'correct-flash':'wrong-flash');
+        playerPicks.push(ch.text);
+        if(ch.correct){
+          pickedAns[stepIdx]=true;
+          var weight=RANK_WEIGHTS[currentQ.rank[stepIdx]];
+          var stepMax=100*weight;
+          var base=stepMax*STEP_BASE_RATIO;
+          var bonusMax=stepMax*(1-STEP_BASE_RATIO);
+          var secondsLeft=Math.max(0,Math.ceil(tv));
+          var speedRatio=Math.min(1,secondsLeft/TOTAL_TIME);
+          var earned=base+speedRatio*bonusMax;
+          roundRawScore+=earned;
+          showScorePopup(d,Math.round(earned));
+        }
+        stepIdx++;
+        setTimeout(function(){
+          if(stepIdx>=3){
+            clearInterval(tiv);tiv=null;
+            gradeRound();
+          } else {
+            updateSentence();
+            renderStep();
+            resetTimer();
+          }
+        },400);
+      };
+    })(c);
+    row.appendChild(d);
+  });
+}
+
+function showScorePopup(cardEl,points){
+  var pop=document.createElement('div');
+  pop.className='score-popup';
+  pop.textContent='+'+points;
+  cardEl.appendChild(pop);
+  setTimeout(function(){pop.remove();},700);
+}
+
+function finishNow(){
+  // stepIdx < 3일때 나머지 빈칸 처리
+  while(playerPicks.length<3) playerPicks.push('(미완성)');
+  clearInterval(tiv);tiv=null;
+  gradeRound();
+}
+
+function gradeRound(){
+  clearInterval(tiv);tiv=null;
+  show('s-round');
+
+  var correctCount=pickedAns.filter(Boolean).length;
+  var score=Math.min(100,Math.round(roundRawScore)); // 정답 개수 + 속도 보너스가 반영된 점수
+
+  document.getElementById('round-num').textContent='ROUND '+currentRound+' / '+TOTAL_ROUNDS;
+  document.getElementById('r-score').textContent=score+'점';
+  var col=score>=70?'#00ff88':score>=40?'#ff9500':'#ff006e';
+  document.getElementById('r-score').style.color=col;
+  document.getElementById('r-verdict').textContent=score>=90?'PERFECT!':score>=60?'GOOD!':score>=30?'NOT BAD':'TRY AGAIN';
+  document.getElementById('r-verdict').style.color=col;
+
+  var comments=['완벽해요!','핵심을 잘 짚었어요!','방향은 맞았어요!','조금 더 공부해봐요!','다시 도전!'];
+  document.getElementById('r-comment').textContent=score>=90?comments[0]:score>=60?comments[1]:score>=30?comments[2]:score>0?comments[3]:comments[4];
+  document.getElementById('r-q').innerHTML='Q: <span>'+esc(currentQ.q)+'</span>';
+  document.getElementById('r-mine').textContent=currentQ.intro+' '+playerPicks.join(' ');
+  document.getElementById('r-ai').textContent=currentQ.intro+' '+currentQ.ans.join(' ');
+
+  roundScores.push(score);
+  roundQuestions.push({q:currentQ.q,score:score});
+
+  var isLast=currentRound>=TOTAL_ROUNDS;
+  var btn=document.getElementById('next-btn');
+  btn.textContent=isLast?'최종 결과 보기 🏁':'다음 문제 →';
+}
+
+function nextRound(){
+  if(currentRound>=TOTAL_ROUNDS){showFinal();}
+  else{startRound();}
+}
+
+function showFinal(){
+  show('s-final');
+  var total=roundScores.reduce(function(a,b){return a+b;},0);
+  var avg=Math.round(total/roundScores.length);
+  document.getElementById('final-score').textContent=total+'점';
+  document.getElementById('final-score').style.color=total>=400?'#00ff88':total>=250?'#ff9500':'#ff006e';
+  document.getElementById('final-avg').textContent='문제당 평균 '+avg+'점 · 만점 500점';
+
+  var html='';
+  roundQuestions.forEach(function(r,i){
+    var sc=r.score>=70?'#00ff88':r.score>=40?'#ff9500':'#ff006e';
+    html+='<div class="score-item"><span style="font-weight:800;font-size:14px;color:#444;flex-shrink:0">Q'+(i+1)+'</span><span class="score-item-q">'+esc(r.q)+'</span><span class="score-item-s" style="color:'+sc+'">'+r.score+'</span></div>';
+  });
+  document.getElementById('score-list').innerHTML=html;
+
+  var updated=saveScore(nickname,total);
+  renderRankList(updated,'final-rank-list',nickname,total);
+}
+
+function goLobby(){
+  clearInterval(tiv);tiv=null;
+  show('s-lobby');
+}
+
+renderRankList(getRankings(),'lobby-rank-list','',0);
+</script>
+</body>
+</html>
