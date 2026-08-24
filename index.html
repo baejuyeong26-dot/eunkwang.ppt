@@ -98,10 +98,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',san
 .btn-again{padding:13px;background:linear-gradient(135deg,#ff006e,#ff4500);border:none;border-radius:10px;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;cursor:pointer;}
 .btn-menu{padding:13px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#777;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-weight:800;font-size:20px;letter-spacing:2px;cursor:pointer;}
 .btn-menu:hover{color:#fff;}
+
+/* ── 반응형 (PC에서 폰 카드 느낌으로) ── */
+@media (min-width:640px){
+  body{display:flex;justify-content:center;align-items:flex-start;padding:48px 20px;}
+  #app{width:100%;max-width:480px;background:#111119;border:1px solid rgba(255,255,255,0.08);border-radius:28px;padding:24px 22px 32px;box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.03);}
+}
 </style>
 </head>
 <body>
 
+<div id="app">
 <div id="s-lobby" class="screen active">
   <div class="logo">WORD BLITZ</div>
   <div class="logo-sub">SENTENCE BUILDER</div>
@@ -164,6 +171,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',san
     <button class="btn-again" onclick="tryStart()">PLAY AGAIN</button>
     <button class="btn-menu" onclick="goLobby()">MENU</button>
   </div>
+</div>
 </div>
 
 <script>
@@ -610,8 +618,7 @@ function onTimeout(){
 }
 
 function updateSentence(){
-  var txt=currentQ.intro;
-  for(var i=0;i<playerPicks.length;i++) txt+=' <span class="masked-pick">● ● ●</span>';
+  var txt = (stepIdx===0) ? currentQ.intro : playerPicks[playerPicks.length-1];
   document.getElementById('sentence-area').innerHTML=txt+' <span class="caret"></span>';
   document.getElementById('hud-step').textContent='STEP '+(stepIdx+1)+' / 3 · 배점 '+Math.round(RANK_WEIGHTS[currentQ.rank[stepIdx]]*100)+'%';
   if(stepIdx>=1) document.getElementById('prompt-box').classList.add('hidden');
